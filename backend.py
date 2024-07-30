@@ -8,46 +8,46 @@ from server.text_to_speech import text_to_speech, get_transcript
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+@app.route('/')
+def serve_frontend():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('.', filename)
+
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():
     try:
         data = request.get_json()
-        audio_base64 = data['audio']
+        audio_base64 = data.get('audio')
+        if not audio_base64:
+            return jsonify({'status': 'error', 'message': 'No audio data provided'}), 400
+        
         audio_data = base64.b64decode(audio_base64)
-
-        # Create directory if it does not exist
         save_dir = 'uploads'
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         
         audio_path = os.path.join(save_dir, 'recorded_audio.wav')
-
         with open(audio_path, 'wb') as f:
             f.write(audio_data)
         
         return jsonify({'status': 'success', 'path': audio_path})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 400
+        return jsonify({'status': 'error', 'message': f'Error uploading audio: {str(e)}'}), 500
 
 @app.route('/process-audio', methods=['POST'])
 def process_audio():
     try:
-        # Use the fixed file path directly
         audio_path = os.path.join('uploads', 'recorded_audio.wav')
-        print(f"Audio path: {audio_path}")  # Debugging log
-
-        # Check if audio path exists
         if not os.path.exists(audio_path):
-            return jsonify({'status': 'error', 'message': 'Audio file not found'}), 400
+            return jsonify({'status': 'error', 'message': 'Audio file not found'}), 404
 
-        # Get transcript
         transcript_result = get_transcript(audio_path)
-        print(f"Transcript result: {transcript_result}")  # Debugging log
+        if not transcript_result:
+            return jsonify({'status': 'error', 'message': 'Failed to get transcript'}), 500
 
-        if transcript_result is None:
-            return jsonify({'status': 'error', 'message': 'Failed to get transcript'}), 400
-
-        # Validate transcript result structure
         try:
             alternatives = transcript_result['results']['channels'][0]['alternatives']
             if not alternatives:
@@ -57,24 +57,17 @@ def process_audio():
         except KeyError as e:
             return jsonify({'status': 'error', 'message': f'Missing key in transcript result: {e}'}), 400
 
-        print(f"Transcript: {transcript}")  # Debugging log
-
-        # Get response from decision agent
         response_text = decide(transcript)
-        print(f"Response text: {response_text}")  # Debugging log
-
-        # Generate TTS audio
         response_audio_path = os.path.join('uploads', 'response_audio.wav')
         text_to_speech(response_text, response_audio_path)
 
         return jsonify({
             'status': 'success',
             'response': response_text,
-            'audio': response_audio_path
+            'audio': 'uploads/response_audio.wav'
         })
     except Exception as e:
-        print(f"Error: {str(e)}")  # Debugging log
-        return jsonify({'status': 'error', 'message': str(e)}), 400
+        return jsonify({'status': 'error', 'message': f'Error processing audio: {str(e)}'}), 500
 
 @app.route('/uploads/response_audio.wav', methods=['GET'])
 def get_response_audio():
