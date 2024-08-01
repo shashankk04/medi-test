@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('start').addEventListener('click', startRecording);
     document.getElementById('stop').addEventListener('click', stopRecording);
 
+    const audioPlayback = document.getElementById('audioPlayback');
+    audioPlayback.addEventListener('ended', startRecording); // Automatically start recording after audio ends
+
     async function startRecording() {
         if (isRecording) return;
 

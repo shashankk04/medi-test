@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory,render_template
 from flask_cors import CORS
 import base64
 import os
@@ -9,12 +9,8 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 @app.route('/')
-def serve_frontend():
-    return send_from_directory('.', 'index.html')
-
-@app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory('.', filename)
+def home():
+    return render_template('index.html')
 
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medi App</title>
+</head>
+<body>
+    <div id="conversation">Welcome to your Personal Medical AI Assistant</div>
+    <button id="start">Start Recording</button>
+    <button id="stop">Stop Recording</button>
+    <audio id="audioPlayback" controls></audio>
+    <script src="{{ url_for('static', filename='recorder.js') }}"></script>
+</body>
+</html>
